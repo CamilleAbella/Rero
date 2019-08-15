@@ -1,7 +1,7 @@
 
 const EventEmitter = require('events')
-const ReactionRole = require("./ReactionRole.js")
-const ReactionRoleMessage = require("./ReactionRoleMessage.js")
+const ReactionRole = require("./classes/ReactionRole.js")
+const ReactionRoleMessage = require("./classes/ReactionRoleMessage.js")
 
 class Rero extends EventEmitter {
 
