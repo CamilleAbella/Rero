@@ -16,7 +16,7 @@ class ReactionRole extends EventEmitter {
             this.defineProperty( this, prop, reactionRoleMessage[prop])
         })
 
-        this.emoji = client.emojis.get(data.emojiID) || data.emojiID
+        this.emojiID = data.emojiID
         this.role = this.guild.roles.get(data.roleID)
 
         this.isSet = new Promise(async resolve => {
@@ -24,13 +24,13 @@ class ReactionRole extends EventEmitter {
             if(this.message){
                 this.messageReaction = this.message.reactions.find(messageReaction => {
                     return (
-                        messageReaction.emoji.name == this.emoji || 
-                        messageReaction.emoji.id == this.emoji.id
+                        messageReaction.emoji.name == this.emojiID || 
+                        messageReaction.emoji.id == this.emojiID
                     )
                 })
                 try{
                     if(!this.messageReaction){
-                        this.messageReaction = await this.message.react(this.emoji)
+                        this.messageReaction = await this.message.react(this.emojiID)
                     }
 
                     await this.messageReaction.fetchUsers()
@@ -62,14 +62,14 @@ class ReactionRole extends EventEmitter {
     }
     
     get id(){
-        return this.message && this.role && this.emoji ? `${this.message.id}.${this.role.id}.${this.emoji.id || this.emoji.name}` : null
+        return this.message && this.role && this.emojiID ? `${this.message.id}.${this.role.id}.${this.emojiID}` : null
     }
 
     get data(){
         return {
             id : this.id,
             roleID : this.role.id,
-            emojiID : this.emoji.id || this.emoji.name
+            emojiID : this.emojiID
         }
     }
 }

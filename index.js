@@ -4,9 +4,15 @@ const ReactionRole = require("./classes/ReactionRole.js")
 const ReactionRoleMessage = require("./classes/ReactionRoleMessage.js")
 
 class Rero extends EventEmitter {
-
-    // Gestion de tout le bordel
-    // Listeners et compagnie
+    
+    /*  ______                    
+        | ___ \                   
+        | |_/ /  ___  _ __   ___  
+        |    /  / _ \| '__| / _ \ 
+        | |\ \ |  __/| |   | (_) |
+        \_| \_| \___||_|    \___/
+    */
+    //  Reaction-role system for Discord bots
 
     constructor(client, data){
 
@@ -20,6 +26,8 @@ class Rero extends EventEmitter {
         this.isSet
             .then(isSet => this.emit("ready"))
             .catch(error => this.emit("error",error))
+
+        client.on("raw", this._rawListener)
     }
 
     addReactionRoleMessage(channel, embed, options){
@@ -42,7 +50,7 @@ class Rero extends EventEmitter {
             this.getReactionRoleMessage(message),
             {
                 roleID : role.id,
-                emojiID : emoji.id || emoji.name
+                emojiID : emojiID || emoji.name
             }
         )
     }
@@ -53,7 +61,11 @@ class Rero extends EventEmitter {
 
     getReactionRole(message, role, emoji){
         return this.getReactionRoleMessage(message).reactionRoles.find(reactionRole => {
-            return reactionRole.role.id == role.id && (reactionRole.emoji.id || reactionRole.emoji.name) == (emoji.id || emoji.name)
+            return reactionRole.role.id == role.id && (
+                reactionRole.emojiID == emoji || 
+                reactionRole.emojiID == emoji.id || 
+                reactionRole.emojiID == emoji.name
+            )
         })
     }
 
@@ -67,6 +79,40 @@ class Rero extends EventEmitter {
 
     get data(){
         return this.reactionRoleMessages.map(reactionRoleMessage => reactionRoleMessage.data)
+    }
+
+    _rawListener(data){
+
+        if(
+            data.t != "MESSAGE_REACTION_ADD" &&
+            data.t != "MESSAGE_REACTION_REMOVE"
+        ) return
+
+        const channel = this.client.channels.get(data.d.channel_id)
+
+        channel.fetchMessage(data.d.message_id).then(message => {
+
+            const emoji = data.d.emoji.id ? `${data.d.emoji.name}:${data.d.emoji.id}` : data.d.emoji.name
+            const reaction = message.reactions.get(emoji)
+            const reactionRole = this.getReactionRole(message, role, reaction.emoji)
+            const member = channel.guild.members.get(data.d.user_id)
+
+            if(reactionRole){
+                if(data.t == "MESSAGE_REACTION_ADD"){
+                    if(!member.roles.has(reactionRole.role.id)){
+                        member.addRole(reactionRole.role.id)
+                            .then(() => this.emit("reactionRoleAdd", reactionRole, member))
+                            .catch(error => this.emit("error",error))
+                    }
+                }else{
+                    if(member.roles.has(reactionRole.role.id)){
+                        member.removeRole(reactionRole.role.id)
+                            .then(() => this.emit("reactionRoleRemove", reactionRole, member))
+                            .catch(error => this.emit("error",error))
+                    }
+                }
+            }
+        })
     }
 }
 
