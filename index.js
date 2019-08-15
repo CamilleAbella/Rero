@@ -58,7 +58,7 @@ class Rero extends EventEmitter {
     }
 
     refresh(){
-
+        return Promise.all(this.reactionRoleMessages.map(reactionRoleMessage => (new ReactionRoleMessage(this.client, reactionRoleMessage.data)).isSet))
     }
 
     deleteAll(){
