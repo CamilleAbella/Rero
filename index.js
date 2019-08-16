@@ -30,7 +30,7 @@ class Rero extends EventEmitter {
         client.on("raw", this._rawListener)
     }
 
-    addReactionRoleMessage(channel, embed, options){
+    addReactionRoleMessage(channel, embed, type){
         const reactionRoleMessage = new ReactionRoleMessage(
             this.client,
             {
@@ -38,7 +38,7 @@ class Rero extends EventEmitter {
                 channelID : channel.id,
                 embed : embed,
                 ReactionRoles : [],
-                options : options
+                type : type
             }
         )
         this.reactionRoleMessages.push(reactionRoleMessage)
@@ -98,17 +98,42 @@ class Rero extends EventEmitter {
             const member = channel.guild.members.get(data.d.user_id)
 
             if(reactionRole){
-                if(data.t == "MESSAGE_REACTION_ADD"){
-                    if(!member.roles.has(reactionRole.role.id)){
-                        member.addRole(reactionRole.role.id)
-                            .then(() => this.emit("reactionRoleAdd", reactionRole, member))
-                            .catch(error => this.emit("error",error))
+
+                if(reactionRole.reactionRoleMessage.type == "button"){
+                    if(data.t == "MESSAGE_REACTION_ADD"){
+                        reaction.remove(member.id)
+                            .catch(console.error)
+                        if(member.roles.has(reactionRole.role.id)){
+                            member.removeRole(reactionRole.role.id)
+                                .then(() => this.emit("reactionRoleRemove", reactionRole, member))
+                                .catch(error => this.emit("error",error))
+                        }else{
+                            member.addRole(reactionRole.role.id)
+                                .then(() => this.emit("reactionRoleAdd", reactionRole, member))
+                                .catch(error => this.emit("error",error))
+                        }
                     }
                 }else{
-                    if(member.roles.has(reactionRole.role.id)){
-                        member.removeRole(reactionRole.role.id)
-                            .then(() => this.emit("reactionRoleRemove", reactionRole, member))
-                            .catch(error => this.emit("error",error))
+                    if(data.t == "MESSAGE_REACTION_ADD"){
+                        if(reactionRole.reactionRoleMessage.type == "radio"){
+                            reactionRole.message.reactions.forEach(messageReaction => {
+                                if(messageReaction.id == reactionRole.messageReacion.id) return
+                                messageReaction.remove(member.id)
+                                    .catch(console.error)
+                            })
+                        }
+    
+                        if(!member.roles.has(reactionRole.role.id)){
+                            member.addRole(reactionRole.role.id)
+                                .then(() => this.emit("reactionRoleAdd", reactionRole, member))
+                                .catch(error => this.emit("error",error))
+                        }
+                    }else{
+                        if(member.roles.has(reactionRole.role.id)){
+                            member.removeRole(reactionRole.role.id)
+                                .then(() => this.emit("reactionRoleRemove", reactionRole, member))
+                                .catch(error => this.emit("error",error))
+                        }
                     }
                 }
             }

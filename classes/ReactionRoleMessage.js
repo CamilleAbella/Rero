@@ -1,11 +1,16 @@
 const { RichEmbed } = require("discord.js")
 const EventEmitter = require('events')
 const ReactionRole = require("./ReactionRole.js")
+const types = [
+    "default",
+    "radio",
+    "button"
+]
 
 class ReactionRoleMessage extends EventEmitter {
 
-    constructor(client,data){
-        this.options = data.options
+    constructor(client, data){
+        this.type = types.includes(data.type) ? data.type : "default"
         this.client = client
         this.guild = client.guilds.get(data.guildID)
         this.channel = client.channels.get(data.channelID)
@@ -50,7 +55,7 @@ class ReactionRoleMessage extends EventEmitter {
             messageID : this.message ? this.message.id : null,
             embed : this.richEmbed._apiTransform(),
             reactionRoles : this.reactionRoles.map(reactionRole => reactionRole.data),
-            options : this.options
+            type : this.type
         }
     }
 }
